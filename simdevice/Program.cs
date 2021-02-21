@@ -68,6 +68,7 @@
             try
             {
                 //Check if connection string saved for use in secrets.bin
+                s_logger.LogInformation("Getting saved connection string");
                 iothubConnection = getConn();
                 modelId = parameters.modelId;
             }
@@ -84,6 +85,7 @@
                     sman.ExportKey("secrets.key");
 
                     //Provision device and get connection string
+                    s_logger.LogInformation("No saved connection string, adding new");
                     iothubConnection = await ProvisionDeviceAsync(parameters, cts.Token);
 
                     //save connection string to secure store
@@ -121,8 +123,11 @@
             }catch (Exception ex)
             {
                 //"CONNECT failed: RefusedNotAuthorized"
-                if(ex.Message.ToString()== "CONNECT failed: RefusedNotAuthorized")
+              
+                if (ex.Message.ToString()== "CONNECT failed: RefusedNotAuthorized")
                 {
+                    s_logger.LogInformation("CONNECT failed: RefusedNotAuthorized");
+
                     //Reprovision device and save connection string to secure store
                     using (var sman = SecretsManager.LoadStore("secrets.bin"))
                     {
@@ -135,6 +140,7 @@
 
                         //save connection string to secure store
                         sman.Set("iothubconn", iothubConnection);
+                        s_logger.LogInformation("Getting updated connection string");
 
                         //save store in a file
                         sman.SaveStore("secrets.bin");
@@ -255,7 +261,8 @@
             ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder
-                .AddFilter(level => level >= LogLevel.Debug);
+                .AddFilter(level => level >= LogLevel.Debug)
+                .AddConsole();
 
             });
 
