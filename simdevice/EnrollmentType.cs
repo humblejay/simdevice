@@ -12,7 +12,6 @@ namespace simdevice
         ///  Enrollment for a single device.
         /// </summary>
         Individual,
-
         /// <summary>
         /// Enrollment for a group of devices.
         /// </summary>

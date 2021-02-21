@@ -1,31 +1,42 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using Microsoft.Azure.Devices.Client;
-using Microsoft.Azure.Devices.Provisioning.Client;
-using Microsoft.Azure.Devices.Provisioning.Client.Transport;
-using Microsoft.Azure.Devices.Shared;
-using System;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace simdevice
 {
+    using Microsoft.Azure.Devices.Client;
+    using Microsoft.Azure.Devices.Provisioning.Client;
+    using Microsoft.Azure.Devices.Provisioning.Client.Transport;
+    using Microsoft.Azure.Devices.Shared;
+    using System;
+    using System.Security.Cryptography;
+    using System.Text;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Demonstrates how to register a device with the device provisioning service using a symmetric key, and then
     /// use the registration information to authenticate to IoT Hub.
     /// </summary>
     internal class ProvisioningDeviceClientSample
     {
+        /// <summary>
+        /// Defines the _parameters.
+        /// </summary>
         private readonly Parameters _parameters;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProvisioningDeviceClientSample"/> class.
+        /// </summary>
+        /// <param name="parameters">The parameters<see cref="Parameters"/>.</param>
         public ProvisioningDeviceClientSample(Parameters parameters)
         {
             _parameters = parameters;
         }
 
-        public async Task RunSampleAsync()
+        /// <summary>
+        /// The RunSampleAsync.
+        /// </summary>
+        /// <returns>The <see cref="Task{string}"/>.</returns>
+        public async Task<string> RunSampleAsync()
         {
             // When registering with a symmetric key using a group enrollment, the provided key will not
             // work for a specific device, rather it must be computed based on two values: the group enrollment
@@ -53,17 +64,19 @@ namespace simdevice
                 _parameters.IdScope,
                 security,
                 transportHandler);
+            ProvisioningRegistrationAdditionalData pdata = new ProvisioningRegistrationAdditionalData();
+            pdata.JsonData = $"{{ \"modelId\": \"{_parameters.modelId}\" }}";
 
             Console.WriteLine($"Initialized for registration Id {security.GetRegistrationID()}.");
 
             Console.WriteLine("Registering with the device provisioning service...");
-            DeviceRegistrationResult result = await provClient.RegisterAsync();
+            DeviceRegistrationResult result = await provClient.RegisterAsync(pdata);
 
             Console.WriteLine($"Registration status: {result.Status}.");
             if (result.Status != ProvisioningRegistrationStatusType.Assigned)
             {
                 Console.WriteLine($"Registration status did not assign a hub, so exiting this sample.");
-                return;
+                return null;
             }
 
             Console.WriteLine($"Device {result.DeviceId} registered to {result.AssignedHub}.");
@@ -73,14 +86,10 @@ namespace simdevice
                 result.DeviceId,
                 security.GetPrimaryKey());
 
-            Console.WriteLine($"Testing the provisioned device with IoT Hub...");
-            using DeviceClient iotClient = DeviceClient.Create(result.AssignedHub, auth, _parameters.TransportType);
+            //HostName=kdemoiothub.azure-devices.net;DeviceId=ASP6025S_1;SharedAccessKey=r26+hjQnRn/RxpmoFKxV4Umw8AfuDgUxB4zpCjbumas=
 
-            Console.WriteLine("Sending a telemetry message...");
-            using var message = new Message(Encoding.UTF8.GetBytes("TestMessage"));
-            await iotClient.SendEventAsync(message);
-
-            Console.WriteLine("Finished.");
+            string connStr = $"HostName={result.AssignedHub};DeviceId={result.DeviceId};SharedAccessKey={security.GetPrimaryKey()}";
+            return connStr;
         }
 
         /// <summary>
@@ -89,9 +98,6 @@ namespace simdevice
         /// <param name="enrollmentKey">Enrollment group symmetric key.</param>
         /// <param name="deviceId">The device Id of the key to create.</param>
         /// <returns>The key for the specified device Id registration in the enrollment group.</returns>
-        /// <seealso>
-        /// https://docs.microsoft.com/en-us/azure/iot-edge/how-to-auto-provision-symmetric-keys?view=iotedge-2018-06#derive-a-device-key
-        /// </seealso>
         private static string ComputeDerivedSymmetricKey(string enrollmentKey, string deviceId)
         {
             if (string.IsNullOrWhiteSpace(enrollmentKey))
@@ -103,6 +109,10 @@ namespace simdevice
             return Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(deviceId)));
         }
 
+        /// <summary>
+        /// The GetTransportHandler.
+        /// </summary>
+        /// <returns>The <see cref="ProvisioningTransportHandler"/>.</returns>
         private ProvisioningTransportHandler GetTransportHandler()
         {
             return _parameters.TransportType switch
@@ -110,10 +120,10 @@ namespace simdevice
                 TransportType.Mqtt => new ProvisioningTransportHandlerMqtt(),
                 TransportType.Mqtt_Tcp_Only => new ProvisioningTransportHandlerMqtt(TransportFallbackType.WebSocketOnly),
                 TransportType.Mqtt_WebSocket_Only => new ProvisioningTransportHandlerMqtt(TransportFallbackType.TcpOnly),
-               // TransportType.Amqp => new ProvisioningTransportHandlerAmqp(),
-                //TransportType.Amqp_Tcp_Only => new ProvisioningTransportHandlerAmqp(TransportFallbackType.WebSocketOnly),
-                //TransportType.Amqp_WebSocket_Only => new ProvisioningTransportHandlerAmqp(TransportFallbackType.TcpOnly),
-                //TransportType.Http1 => new ProvisioningTransportHandlerHttp(),
+                TransportType.Amqp => new ProvisioningTransportHandlerAmqp(),
+                TransportType.Amqp_Tcp_Only => new ProvisioningTransportHandlerAmqp(TransportFallbackType.WebSocketOnly),
+                TransportType.Amqp_WebSocket_Only => new ProvisioningTransportHandlerAmqp(TransportFallbackType.TcpOnly),
+                TransportType.Http1 => new ProvisioningTransportHandlerHttp(),
                 _ => throw new NotSupportedException($"Unsupported transport type {_parameters.TransportType}"),
             };
         }
