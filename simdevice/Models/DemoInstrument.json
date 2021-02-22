@@ -1,0 +1,149 @@
+  {
+    "@id": "dtmi:demoapp:DemoInstrument6ql;1",
+    "@type": "Interface",
+    "contents": [
+      {
+        "@id": "dtmi:demoapp:DemoInstrument6ql:Temperature;1",
+        "@type": [
+          "Telemetry",
+          "Temperature"
+        ],
+        "displayName": {
+          "en": "Temperature"
+        },
+        "name": "Temperature",
+        "schema": "double",
+        "unit": "degreeFahrenheit"
+      },
+      {
+        "@id": "dtmi:demoapp:DemoInstrument6ql:Humidity;1",
+        "@type": [
+          "Telemetry",
+          "Humidity"
+        ],
+        "displayName": {
+          "en": "Humidity"
+        },
+        "name": "Humidity",
+        "schema": "integer",
+        "unit": "percent"
+      },
+      {
+        "@id": "dtmi:demoapp:DemoInstrument6ql:RemoteUrl;1",
+        "@type": "Property",
+        "displayName": {
+          "en": "RemoteUrl"
+        },
+        "name": "RemoteUrl",
+        "schema": "string",
+        "writable": false
+      },
+      {
+        "@id": "dtmi:demoapp:DemoInstrument6ql:EnableRemote;1",
+        "@type": "Command",
+        "commandType": "synchronous",
+        "displayName": {
+          "en": "EnableRemote"
+        },
+        "name": "EnableRemote",
+        "request": {
+          "@type": "CommandPayload",
+          "description": {
+            "en": "Starts session with Azure Relay"
+          },
+          "displayName": {
+            "en": "StartSession"
+          },
+          "name": "StartSession",
+          "schema": {
+            "@type": "Object",
+            "displayName": {
+              "en": "Object"
+            },
+            "fields": [
+              {
+                "displayName": {
+                  "en": "ServiceNamespace"
+                },
+                "name": "ServiceNamespace",
+                "schema": "string"
+              },
+              {
+                "displayName": {
+                  "en": "ServiceKeyName"
+                },
+                "name": "ServiceKeyName",
+                "schema": "string"
+              },
+              {
+                "displayName": {
+                  "en": "ServiceKey"
+                },
+                "name": "ServiceKey",
+                "schema": "string"
+              },
+              {
+                "displayName": {
+                  "en": "ConnectionName"
+                },
+                "name": "ConnectionName",
+                "schema": "string"
+              },
+              {
+                "displayName": {
+                  "en": "HostName"
+                },
+                "name": "HostName",
+                "schema": "string"
+              },
+              {
+                "displayName": {
+                  "en": "TargetPort"
+                },
+                "name": "TargetPort",
+                "schema": "integer"
+              },
+              {
+                "displayName": {
+                  "en": "SessionUrl"
+                },
+                "name": "SessionUrl",
+                "schema": "string"
+              }
+            ]
+          }
+        },
+        "response": {
+          "@type": "CommandPayload",
+          "displayName": {
+            "en": "SessionState"
+          },
+          "name": "SessionState",
+          "schema": {
+            "@type": "Enum",
+            "displayName": {
+              "en": "Enum"
+            },
+            "enumValues": [
+              {
+                "enumValue": 0,
+                "name": "Success"
+              },
+              {
+                "enumValue": 1,
+                "name": "Failed"
+              }
+            ],
+            "valueSchema": "integer"
+          }
+        }
+      }
+    ],
+    "displayName": {
+      "en": "DemoInstrument"
+    },
+    "@context": [
+      "dtmi:iotcentral:context;2",
+      "dtmi:dtdl:context;2"
+    ]
+  }

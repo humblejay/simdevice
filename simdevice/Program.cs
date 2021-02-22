@@ -23,9 +23,17 @@
         /// Defines the s_logger.
         /// </summary>
         private static ILogger s_logger;
+
+        /// <summary>
+        /// Defines the iothubConnection.
+        /// </summary>
         private static string iothubConnection;
+
+        /// <summary>
+        /// Defines the modelId.
+        /// </summary>
         private static string modelId;
-      
+
         /// <summary>
         /// The Main.
         /// </summary>
@@ -51,7 +59,6 @@
             if (parameters.EnrollmentType == EnrollmentType.Group)
                 parameters.PrimaryKey = ComputeDerivedSymmetricKey(parameters.PrimaryKey, parameters.Id);
 
-
             s_logger = InitializeConsoleDebugLogger();
 
             if (!parameters.Validate(s_logger))
@@ -67,19 +74,19 @@
 
             try
             {
-                //Check if connection string saved for use in secrets.bin
+                //Check if connection string  is available in secrets.bin
                 s_logger.LogInformation("Getting saved connection string");
                 iothubConnection = getConn();
                 modelId = parameters.modelId;
             }
-            //If secrets.bin does not exist, create it to store connection string
+          
             catch (Exception ex)
             {
 
                 //secrets.bin file not found, so create it
                 using (var sman = SecretsManager.CreateStore())
                 {
-                    //securely derive key from group primary key
+                    //securely derive key from primary key
                     sman.LoadKeyFromPassword(parameters.PrimaryKey);
                     // Export the keyfile for future use to retrive secret
                     sman.ExportKey("secrets.key");
@@ -106,13 +113,6 @@
                 s_logger.LogInformation("Sample execution cancellation requested; will exit.");
             };
 
-          
-
-              
-           
-           
-
-           
             try
             {
                 s_logger.LogDebug($"Set up the device client.");
@@ -120,11 +120,12 @@
                 using DeviceClient deviceClient = SetupDeviceClientAsync(iothubConnection, cts.Token);
                 var sample = new ThermostatSample(deviceClient, s_logger);
                 await sample.PerformOperationsAsync(cts.Token);
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 //"CONNECT failed: RefusedNotAuthorized"
-              
-                if (ex.Message.ToString()== "CONNECT failed: RefusedNotAuthorized")
+
+                if (ex.Message.ToString() == "CONNECT failed: RefusedNotAuthorized")
                 {
                     s_logger.LogInformation("CONNECT failed: RefusedNotAuthorized");
 
@@ -133,7 +134,7 @@
                     {
                         //Load key from file
                         sman.LoadKeyFromFile("secrets.key");
-                    
+
 
                         //Provision device and get connection string
                         iothubConnection = await ProvisionDeviceAsync(parameters, cts.Token);
@@ -146,7 +147,7 @@
                         sman.SaveStore("secrets.bin");
 
                     }
-                                      
+
                     s_logger.LogDebug($"Set up the device client.");
 
                     using DeviceClient deviceClient = SetupDeviceClientAsync(iothubConnection, cts.Token);
@@ -160,19 +161,17 @@
         }
 
         /// <summary>
-        /// The Get IoTHub Connection from Secure Store or from Provisioning Device
+        /// The Get IoTHub Connection from Secure Store if saved earlier.
         /// </summary>
         /// <returns>The <see cref="string"/>.</returns>
         private static string getConn()
         {
-
             using (var sman = SecretsManager.LoadStore("secrets.bin"))
             {
 
                 // or use an existing key file:
                 sman.LoadKeyFromFile("secrets.key");
                 var secret = sman.Get("iothubconn");
-
 
                 return secret;
 
@@ -199,19 +198,28 @@
             var result = await pdc.RegisterAsync(pnpPayload, cancellationToken);
             string connStr = $"HostName={result.AssignedHub};DeviceId={result.DeviceId};SharedAccessKey={parameters.PrimaryKey}";
             return connStr;
-
         }
 
+        /// <summary>
+        /// The SetupDeviceClientAsync.
+        /// </summary>
+        /// <param name="conn">The conn<see cref="string"/>.</param>
+        /// <param name="cancellationToken">The cancellationToken<see cref="CancellationToken"/>.</param>
+        /// <returns>The <see cref="DeviceClient"/>.</returns>
         private static DeviceClient SetupDeviceClientAsync(string conn, CancellationToken cancellationToken)
         {
             DeviceClient deviceClient;
-       
-                    s_logger.LogDebug($"Initializing via IoT Hub connection string");
-                    deviceClient = InitializeDeviceClient(conn);
+
+            s_logger.LogDebug($"Initializing via IoT Hub connection string");
+            deviceClient = InitializeDeviceClient(conn);
             return deviceClient;
-    
         }
 
+        /// <summary>
+        /// The InitializeDeviceClient.
+        /// </summary>
+        /// <param name="deviceConnectionString">The deviceConnectionString<see cref="string"/>.</param>
+        /// <returns>The <see cref="DeviceClient"/>.</returns>
         private static DeviceClient InitializeDeviceClient(string deviceConnectionString)
         {
             var options = new ClientOptions
@@ -224,12 +232,12 @@
             {
                 s_logger.LogDebug($"Connection status change registered - status={status}, reason={reason}.");
             });
-            
 
-            
+
+
             return deviceClient;
         }
-   
+
         /// <summary>
         /// The GetConfiguration.
         /// </summary>
@@ -245,10 +253,7 @@
                 .AddEnvironmentVariables()
                 .AddCommandLine(args);
 
-
-
             var setConfig = builder.Build();
-
             return setConfig;
         }
 

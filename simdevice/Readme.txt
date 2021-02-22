@@ -3,17 +3,8 @@
 Add RegistrationPrefix & DTDL modelId for the device in appsettings.json file as below
 ---------------------------------------------------------------------------
 {
-  "exclude": [
-    "**/bin",
-    "**/bower_components",
-    "**/jspm_packages",
-    "**/node_modules",
-    "**/obj",
-    "**/platforms"
-  ],
-
   "RegistrationPrefix": "demodevice_",   
-  "ModelId": "dtmi:azurertos:devkit:gsgmxchip;1"
+  "ModelId": "dtmi:com:example:Thermostat;1"
 }
 
 For local development & testing
