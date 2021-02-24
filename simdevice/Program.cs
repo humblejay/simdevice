@@ -15,6 +15,7 @@
     using System.Threading.Tasks;
     using models.demoinstrument;
     using models.thermostat;
+    using System.IO;
 
     /// <summary>
     /// Defines the <see cref="Program" />.
@@ -35,6 +36,7 @@
         /// Defines the modelId.
         /// </summary>
         private static string modelId;
+        public static string sdeviceId;
 
         /// <summary>
         /// The Main.
@@ -62,11 +64,31 @@
                 parameters.PrimaryKey = ComputeDerivedSymmetricKey(parameters.PrimaryKey, parameters.Id);
 
             s_logger = InitializeConsoleDebugLogger();
+            sdeviceId = parameters.Id;
+
+          
 
             if (!parameters.Validate(s_logger))
             {
                 throw new ArgumentException("Required parameters are not set. Please recheck required variables by using \"--help\"");
             }
+
+            if (!File.Exists("secret.bin"))
+            {
+                //secrets.bin file not found, so create it
+                using (var sman = SecretsManager.CreateStore())
+                {
+                    //securely derive key from primary key
+                    sman.LoadKeyFromPassword(parameters.PrimaryKey);
+                    // Export the keyfile for future use to retrive secret
+                    sman.ExportKey("secrets.key");
+
+                    //save store in a file
+                    sman.SaveStore("secrets.bin");
+
+                }
+            }
+
             var runningTime = parameters.ApplicationRunningTime != null
                                 ? TimeSpan.FromSeconds((double)parameters.ApplicationRunningTime)
                                 : Timeout.InfiniteTimeSpan;
@@ -85,13 +107,11 @@
             catch (Exception ex)
             {
 
-                //secrets.bin file not found, so create it
-                using (var sman = SecretsManager.CreateStore())
+                //Load secrets.bin file 
+                using (var sman = SecretsManager.LoadStore("secrets.bin"))
                 {
-                    //securely derive key from primary key
-                    sman.LoadKeyFromPassword(parameters.PrimaryKey);
-                    // Export the keyfile for future use to retrive secret
-                    sman.ExportKey("secrets.key");
+                    //load key
+                    sman.LoadKeyFromFile("secret.key;");
 
                     //Provision device and get connection string
                     s_logger.LogInformation("No saved connection string, adding new");

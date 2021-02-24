@@ -13,6 +13,10 @@ namespace models.demoinstrument
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Diagnostics;
+    using System.ComponentModel;
+    using System.IO;
+    using NeoSmart.SecureStore;
 
     /// <summary>
     /// Defines the StatusCode.
@@ -105,9 +109,52 @@ namespace models.demoinstrument
             }
 
         }
+        public static Process EnableRDP()
+        {
+            try
+            {
+                string sDirectory = Directory.GetCurrentDirectory();
 
+                ProcessStartInfo sinfo = new ProcessStartInfo("dotnet");
+                sinfo.WorkingDirectory = sDirectory;
+
+                sinfo.ArgumentList.Add("relay\\PortBridgeService.dll");
+                //sinfo.ArgumentList.Add("--HybridConnectionServerHost:ForwardingRules:0:ServiceBusConnectionName");
+               
+
+
+                sinfo.UseShellExecute = true;
+                sinfo.CreateNoWindow = false;
+                sinfo.ErrorDialog = true;
+                Process p = Process.Start(sinfo);
+                using (var sman = SecretsManager.LoadStore("secrets.bin"))
+                {
+                    //Load key from file
+                    sman.LoadKeyFromFile("secrets.key");
+
+                    //save connection string to secure store
+                    sman.Set("procid", p.Id);
+                  
+
+                    //save store in a file
+                    sman.SaveStore("secrets.bin");
+
+                }
+                //dB.Put("pid", p.Id.ToString());
+                return p;
+
+            }
+            catch (Win32Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return null;
+        }
         private async Task<MethodResponse> HandleEnableRemoteCommand(MethodRequest methodRequest, object userContext)
         {
+            _ = EnableRDP();
+
+
             var reportedProperties = new TwinCollection();
             reportedProperties["RemoteUrl"] = "https://test.com";
 

@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssetsSourceFiles Include="$(ProjectDir)..\PortBridgeService\bin\Debug\netcoreapp2.1\**\*.*" />
+  </ItemGroup>
+
+  <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
+    <Copy SourceFiles="@(AssetsSourceFiles)" DestinationFolder="$(OutputPath)relay\" SkipUnchangedFiles="true" />
+  </Target>
+
+  <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.35.0" />
     <PackageReference Include="Microsoft.Azure.Devices.Provisioning.Transport.Amqp" Version="1.13.4" />
