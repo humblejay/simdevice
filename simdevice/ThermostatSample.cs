@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace simdevice
+namespace models.thermostat
 {
     using Microsoft.Azure.Devices.Client;
     using Microsoft.Azure.Devices.Shared;

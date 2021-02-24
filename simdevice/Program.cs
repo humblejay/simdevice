@@ -13,6 +13,8 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using models.demoinstrument;
+    using models.thermostat;
 
     /// <summary>
     /// Defines the <see cref="Program" />.
@@ -118,7 +120,10 @@
                 s_logger.LogDebug($"Set up the device client.");
 
                 using DeviceClient deviceClient = SetupDeviceClientAsync(iothubConnection, cts.Token);
-                var sample = new ThermostatSample(deviceClient, s_logger);
+                //var sample = new ThermostatSample(deviceClient, s_logger);
+                //await sample.PerformOperationsAsync(cts.Token);
+
+                var sample = new DemoInstrument(deviceClient, s_logger);
                 await sample.PerformOperationsAsync(cts.Token);
             }
             catch (Exception ex)
@@ -151,7 +156,9 @@
                     s_logger.LogDebug($"Set up the device client.");
 
                     using DeviceClient deviceClient = SetupDeviceClientAsync(iothubConnection, cts.Token);
-                    var sample = new ThermostatSample(deviceClient, s_logger);
+                   // var sample = new ThermostatSample(deviceClient, s_logger);
+                   // await sample.PerformOperationsAsync(cts.Token);
+                    var sample = new DemoInstrument(deviceClient, s_logger);
                     await sample.PerformOperationsAsync(cts.Token);
 
                 }
@@ -271,7 +278,8 @@
 
             });
 
-            return loggerFactory.CreateLogger<ThermostatSample>();
+           // return loggerFactory.CreateLogger<ThermostatSample>();
+            return loggerFactory.CreateLogger<DemoInstrument>();
         }
 
         /// <summary>

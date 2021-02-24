@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace model.demoinstrument
+namespace models.demoinstrument
 {
     using Microsoft.Azure.Devices.Client;
     using Microsoft.Azure.Devices.Shared;
@@ -57,7 +57,7 @@ namespace model.demoinstrument
         /// </summary>
         private double _humidity = 0d;
 
-     
+
         /// <summary>
         /// Defines the _deviceClient.
         /// </summary>
@@ -87,31 +87,45 @@ namespace model.demoinstrument
         public async Task PerformOperationsAsync(CancellationToken cancellationToken)
         {
             // This sample follows the following workflow:
-            // -> Set handler to receive "targetTemperature" updates, and send the received update over reported property.
-            // -> Set handler to receive "getMaxMinReport" command, and send the generated report as command response.
-            // -> Periodically send "temperature" over telemetry.
-            // -> Send "maxTempSinceLastReboot" over property update, when a new max temperature is set.
-
-           // _logger.LogDebug($"Set handler to receive \"targetTemperature\" updates.");
-           // await _deviceClient.SetDesiredPropertyUpdateCallbackAsync(TargetTemperatureUpdateCallbackAsync, _deviceClient, cancellationToken);
+            //Enable remote command passes connection parameters for Azure Relay connection
+            //This allows remote desktop or ssh connection to the device from cloud
 
             _logger.LogDebug($"Set handler for \"EnableRemote\" command.");
             await _deviceClient.SetMethodHandlerAsync("EnableRemote", HandleEnableRemoteCommand, _deviceClient, cancellationToken);
-
-            bool temperatureReset = true;
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (temperatureReset)
-                {
-                    // Generate a random value between 5.0°C and 45.0°C for the current temperature reading.
-                    _temperature = Math.Round(_random.NextDouble() * 40.0 + 5.0, 1);
-                    temperatureReset = false;
-                }
 
-                await SendTemperatureAsync();
+                // Generate a random value between 5.0°C and 45.0°C for the current temperature reading.
+                _temperature = Math.Round(_random.NextDouble() * 40.0 + 5.0, 1);
+                _humidity = _random.Next(0, 100);
+
+
+                await SendTelemetryAsync();
                 await Task.Delay(5 * 1000);
             }
+
         }
+
+        private async Task<MethodResponse> HandleEnableRemoteCommand(MethodRequest methodRequest, object userContext)
+        {
+            var reportedProperties = new TwinCollection();
+            reportedProperties["RemoteUrl"] = "https://test.com";
+
+            await _deviceClient.UpdateReportedPropertiesAsync(reportedProperties);
+            _logger.LogDebug($"Property: Update - {{ \"RemoteUrl\":\"https://test.com\"}} is {StatusCode.Completed}.");
+
+            var report = "{}";
+
+            byte[] responsePayload = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(report));
+            return new MethodResponse(responsePayload, (int)StatusCode.Completed);
+
+
+        }
+
+      
+
+    
+        
 
         /// <summary>
         /// The TargetTemperatureUpdateCallbackAsync.
@@ -166,79 +180,16 @@ namespace model.demoinstrument
             return collection.Contains(propertyName) ? (true, (T)collection[propertyName]) : (false, default);
         }
 
-        /// <summary>
-        /// The HandleEnableRemoteCommand.
-        /// </summary>
-        /// <param name="request">The request<see cref="MethodRequest"/>.</param>
-        /// <param name="userContext">The userContext<see cref="object"/>.</param>
-        /// <returns>The <see cref="Task{MethodResponse}"/>.</returns>
-        private Task<MethodResponse> HandleEnableRemoteCommand(MethodRequest request, object userContext)
-        {
-            try
-            {
-                DateTime sinceInUtc = JsonConvert.DeserializeObject<DateTime>(request.DataAsJson);
-                var sinceInDateTimeOffset = new DateTimeOffset(sinceInUtc);
-                _logger.LogDebug($"Command: Received - Generating max, min and avg temperature report since " +
-                    $"{sinceInDateTimeOffset.LocalDateTime}.");
-
-                Dictionary<DateTimeOffset, double> filteredReadings = _temperatureReadingsDateTimeOffset
-                    .Where(i => i.Key > sinceInDateTimeOffset)
-                    .ToDictionary(i => i.Key, i => i.Value);
-
-                if (filteredReadings != null && filteredReadings.Any())
-                {
-                    var report = new
-                    {
-                        maxTemp = filteredReadings.Values.Max<double>(),
-                        minTemp = filteredReadings.Values.Min<double>(),
-                        avgTemp = filteredReadings.Values.Average(),
-                        startTime = filteredReadings.Keys.Min(),
-                        endTime = filteredReadings.Keys.Max(),
-                    };
-
-                    _logger.LogDebug($"Command: MaxMinReport since {sinceInDateTimeOffset.LocalDateTime}:" +
-                        $" maxTemp={report.maxTemp}, minTemp={report.minTemp}, avgTemp={report.avgTemp}, " +
-                        $"startTime={report.startTime.LocalDateTime}, endTime={report.endTime.LocalDateTime}");
-
-                    byte[] responsePayload = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(report));
-                    return Task.FromResult(new MethodResponse(responsePayload, (int)StatusCode.Completed));
-                }
-
-                _logger.LogDebug($"Command: No relevant readings found since {sinceInDateTimeOffset.LocalDateTime}, cannot generate any report.");
-                return Task.FromResult(new MethodResponse((int)StatusCode.NotFound));
-            }
-            catch (JsonReaderException ex)
-            {
-                _logger.LogDebug($"Command input is invalid: {ex.Message}.");
-                return Task.FromResult(new MethodResponse((int)StatusCode.BadRequest));
-            }
-        }
 
         /// <summary>
-        /// The SendTemperatureAsync.
+        /// The SendTelemetryAsync.
         /// </summary>
         /// <returns>The <see cref="Task"/>.</returns>
-        private async Task SendTemperatureAsync()
+        private async Task SendTelemetryAsync()
         {
-            await SendTemperatureTelemetryAsync();
+            
 
-            double maxTemp = _temperatureReadingsDateTimeOffset.Values.Max<double>();
-            if (maxTemp > _maxTemp)
-            {
-                _maxTemp = maxTemp;
-                await UpdateMaxTemperatureSinceLastRebootAsync();
-            }
-        }
-
-        /// <summary>
-        /// The SendTemperatureTelemetryAsync.
-        /// </summary>
-        /// <returns>The <see cref="Task"/>.</returns>
-        private async Task SendTemperatureTelemetryAsync()
-        {
-            const string telemetryName = "temperature";
-
-            string telemetryPayload = $"{{ \"{telemetryName}\": {_temperature} }}";
+            string telemetryPayload = $"{{ \"Temperature\": {_temperature},\"Humidity\":{_humidity}}}";
             using var message = new Message(Encoding.UTF8.GetBytes(telemetryPayload))
             {
                 ContentEncoding = "utf-8",
@@ -246,24 +197,28 @@ namespace model.demoinstrument
             };
 
             await _deviceClient.SendEventAsync(message);
-            _logger.LogDebug($"Telemetry: Sent - {{ \"{telemetryName}\": {_temperature}°C }}.");
+            _logger.LogDebug($"Telemetry: Sent - {{ \"Temperature\": {_temperature},\"Humidity\":{_humidity}}}");
 
-            _temperatureReadingsDateTimeOffset.Add(DateTimeOffset.Now, _temperature);
         }
 
-        /// <summary>
-        /// The UpdateMaxTemperatureSinceLastRebootAsync.
-        /// </summary>
-        /// <returns>The <see cref="Task"/>.</returns>
-        private async Task UpdateMaxTemperatureSinceLastRebootAsync()
-        {
-            const string propertyName = "maxTempSinceLastReboot";
 
-            var reportedProperties = new TwinCollection();
-            reportedProperties[propertyName] = _maxTemp;
+    }
 
-            await _deviceClient.UpdateReportedPropertiesAsync(reportedProperties);
-            _logger.LogDebug($"Property: Update - {{ \"{propertyName}\": {_maxTemp}°C }} is {StatusCode.Completed}.");
-        }
+    public class StartSessionReq
+    {
+        public string ServiceNamespace { get; set; }
+        public string ServiceKeyName { get; set; }
+        public string ServiceKey { get; set; }
+        public string ConnectionName { get; set; }
+        public string HostName { get; set; }
+        public int TargetPort { get; set; }
+        public string SessionUrl { get; set; }
+
+    }
+    public class StartSessionRes
+    {
+        public enum SessionState { 
+            success,failed }
+
     }
 }
