@@ -1,3 +1,4 @@
+[
   {
     "@id": "dtmi:demoapp:DemoInstrument6ql;1",
     "@type": "Interface",
@@ -39,22 +40,22 @@
         "writable": false
       },
       {
-        "@id": "dtmi:demoapp:DemoInstrument6ql:EnableRemote;1",
+        "@id": "dtmi:demoapp:DemoInstrument6ql:SetRelayConfig;1",
         "@type": "Command",
         "commandType": "synchronous",
         "displayName": {
-          "en": "EnableRemote"
+          "en": "SetRelayConfig"
         },
-        "name": "EnableRemote",
+        "name": "SetRelayConfig",
         "request": {
           "@type": "CommandPayload",
           "description": {
-            "en": "Starts session with Azure Relay"
+            "en": "Sets Relay Configuration on Device"
           },
           "displayName": {
-            "en": "StartSession"
+            "en": "SetRelayConfig"
           },
-          "name": "StartSession",
+          "name": "SetRelayConfig",
           "schema": {
             "@type": "Object",
             "displayName": {
@@ -116,27 +117,24 @@
         "response": {
           "@type": "CommandPayload",
           "displayName": {
-            "en": "SessionState"
+            "en": "RelayConfig"
           },
-          "name": "SessionState",
-          "schema": {
-            "@type": "Enum",
-            "displayName": {
-              "en": "Enum"
-            },
-            "enumValues": [
-              {
-                "enumValue": 0,
-                "name": "Success"
-              },
-              {
-                "enumValue": 1,
-                "name": "Failed"
-              }
-            ],
-            "valueSchema": "integer"
-          }
+          "name": "RelayConfig",
+          "schema": "boolean"
         }
+      },
+      {
+        "@id": "dtmi:demoapp:DemoInstrument6ql:EnableRDP;1",
+        "@type": "Property",
+        "description": {
+          "en": "Enable or Disable RDP"
+        },
+        "displayName": {
+          "en": "EnableRDP"
+        },
+        "name": "EnableRDP",
+        "schema": "boolean",
+        "writable": true
       }
     ],
     "displayName": {
@@ -147,3 +145,4 @@
       "dtmi:dtdl:context;2"
     ]
   }
+]

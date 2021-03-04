@@ -16,7 +16,7 @@ namespace models.demoinstrument
     using System.Diagnostics;
     using System.ComponentModel;
     using System.IO;
-    using NeoSmart.SecureStore;
+    using simdevice;
 
     /// <summary>
     /// Defines the StatusCode.
@@ -72,6 +72,8 @@ namespace models.demoinstrument
         /// </summary>
         private readonly ILogger _logger;
 
+        private secretstore store;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DemoInstrument"/> class.
         /// </summary>
@@ -81,6 +83,7 @@ namespace models.demoinstrument
         {
             _deviceClient = deviceClient ?? throw new ArgumentNullException($"{nameof(deviceClient)} cannot be null.");
             _logger = logger ?? LoggerFactory.Create(builer => builer.AddConsole()).CreateLogger<DemoInstrument>();
+            
         }
 
         /// <summary>
@@ -94,8 +97,12 @@ namespace models.demoinstrument
             //Enable remote command passes connection parameters for Azure Relay connection
             //This allows remote desktop or ssh connection to the device from cloud
 
-            _logger.LogDebug($"Set handler for \"EnableRemote\" command.");
-            await _deviceClient.SetMethodHandlerAsync("EnableRemote", HandleEnableRemoteCommand, _deviceClient, cancellationToken);
+            _logger.LogDebug($"Set handler for \"SetRelayConfig\" command.");
+            await _deviceClient.SetMethodHandlerAsync("SetRelayConfig", HandleEnableRemoteCommand, _deviceClient, cancellationToken);
+
+            _logger.LogDebug($"Set handler to receive \"Desired Properties\" updates.");
+            await _deviceClient.SetDesiredPropertyUpdateCallbackAsync(HandleDesiredProperties, _deviceClient, cancellationToken);
+
             while (!cancellationToken.IsCancellationRequested)
             {
 
@@ -109,38 +116,131 @@ namespace models.demoinstrument
             }
 
         }
+
+        private async Task HandleDesiredProperties(TwinCollection desiredProperties, object userContext)
+        {
+            const string propertyName = "EnableRDP";
+            Process relayprocess;
+            (bool EnableRDPReceived, bool valueEnableRDP) = GetPropertyFromTwin<bool>(desiredProperties, propertyName);
+            if (EnableRDPReceived)
+            {
+
+                _logger.LogDebug($"Property: Received - {{ \"{propertyName}\": {valueEnableRDP} }}.");
+
+                if (valueEnableRDP)
+                {
+                    string jsonPropertyPending = $"{{ \"{propertyName}\": {{ \"value\":\" {valueEnableRDP}\", \"ac\": {(int)StatusCode.InProgress}, " +
+                        $"\"av\": {desiredProperties.Version} }} }}";
+                    var reportedPropertyPending = new TwinCollection(jsonPropertyPending);
+                    await _deviceClient.UpdateReportedPropertiesAsync(reportedPropertyPending);
+                    _logger.LogDebug($"Property: Update - {{\"{propertyName}\": {valueEnableRDP} }} is {StatusCode.InProgress}.");
+
+                     relayprocess = EnableRDP();
+                    secretstore.SaveSecret("procid", relayprocess.Id.ToString());
+
+                
+
+                    if (!relayprocess.HasExited)
+                    {
+                    
+
+                        string jsonProperty = $"{{ \"{propertyName}\": {{ \"value\": \"{valueEnableRDP}\", \"ac\": {(int)StatusCode.Completed}, " +
+                            $"\"av\": {desiredProperties.Version}, \"ad\": \"Successfully enabled RDP\" }} }}";
+                        var reportedProperty = new TwinCollection(jsonProperty);
+                        //reportedProperty["RemoteUrl"] = "https://test.com";
+                        reportedProperty["EnableRDP"] = true;
+                        await _deviceClient.UpdateReportedPropertiesAsync(reportedProperty);
+                        _logger.LogDebug($"Property: Update - {{\"{propertyName}\": \"{valueEnableRDP}\" }} is {StatusCode.Completed}.");
+                    }
+                    else
+                    {
+                        _logger.LogError($"Property: Update - {{\"{propertyName}\": \"{valueEnableRDP}\" }} is could not start relay.");
+                    }
+                }
+                else
+                {
+                    string jsonProperty = $"{{ \"{propertyName}\": {{ \"value\":\" {valueEnableRDP}\", \"ac\": {(int)StatusCode.Completed}, " +
+                      $"\"av\": {desiredProperties.Version}, \"ad\": \"Successfully disabled RDP\" }} }}";
+                    var reportedProperty = new TwinCollection(jsonProperty);
+                    //reportedProperty["RemoteUrl"] = "https://test.com";
+                    reportedProperty["EnableRDP"] = false;
+
+                    try
+                    {
+                        string procid = secretstore.GetSecret("procid");
+
+                        Process p = Process.GetProcessById(Convert.ToInt32(procid));
+                        p.CloseMainWindow();
+                        p.Close();
+                        secretstore.SaveSecret("procid", "");
+
+                    }
+                    catch (Exception Ex)
+                    {
+                        //Key was not present
+
+
+                    }
+
+
+                    await _deviceClient.UpdateReportedPropertiesAsync(reportedProperty);
+                    _logger.LogDebug($"Property: Update - {{\"{propertyName}\":\" {valueEnableRDP}\" }} is {StatusCode.Completed}.");
+
+                }
+
+            }
+            else
+            {
+                _logger.LogDebug($"Property: Received an unrecognized property update from service:\n{desiredProperties.ToJson()}");
+            };
+        }
+
+  
+
         public static Process EnableRDP()
         {
             try
             {
+                string jrelaconfig = secretstore.GetSecret("relayconfig");
                 string sDirectory = Directory.GetCurrentDirectory();
+                RelayConfig rc = JsonConvert.DeserializeObject<RelayConfig>(jrelaconfig);
 
-                ProcessStartInfo sinfo = new ProcessStartInfo("dotnet");
+                ProcessStartInfo sinfo = new ProcessStartInfo("relay\\PortBridgeService.exe");
+
+               
                 sinfo.WorkingDirectory = sDirectory;
 
-                sinfo.ArgumentList.Add("relay\\PortBridgeService.dll");
-                //sinfo.ArgumentList.Add("--HybridConnectionServerHost:ForwardingRules:0:ServiceBusConnectionName");
-               
+                //sinfo.ArgumentList.Add("relay\\PortBridgeService.dll");
+                sinfo.ArgumentList.Add("--HybridConnectionServerHost:ServiceBusNameSpace");
+                sinfo.ArgumentList.Add(rc.ServiceNameSpace);
+
+                sinfo.ArgumentList.Add("--HybridConnectionServerHost:ServiceBusKeyName");
+                sinfo.ArgumentList.Add(rc.ServiceKeyName);
+
+                sinfo.ArgumentList.Add("--HybridConnectionServerHost:ServiceBusKey");
+                sinfo.ArgumentList.Add(rc.ServiceKey);
+
+                sinfo.ArgumentList.Add("--HybridConnectionServerHost:ForwardingRules:0:ServiceBusConnectionName");
+                sinfo.ArgumentList.Add(rc.ConnectionName);
+
+                sinfo.ArgumentList.Add("--HybridConnectionServerHost:ForwardingRules:0:TargetHostname");
+                sinfo.ArgumentList.Add(rc.HostName);
+
+                sinfo.ArgumentList.Add("--HybridConnectionServerHost:ForwardingRules:0:TargetPorts");
+                sinfo.ArgumentList.Add(rc.TargetPort.ToString());
+
+                sinfo.ArgumentList.Add("--HybridConnectionServerHost:ForwardingRules:0:InstanceCount");
+                sinfo.ArgumentList.Add("1");
 
 
                 sinfo.UseShellExecute = true;
                 sinfo.CreateNoWindow = false;
                 sinfo.ErrorDialog = true;
+
+                Console.WriteLine("Starting Process for RDP");
                 Process p = Process.Start(sinfo);
-                using (var sman = SecretsManager.LoadStore("secrets.bin"))
-                {
-                    //Load key from file
-                    sman.LoadKeyFromFile("secrets.key");
-
-                    //save connection string to secure store
-                    sman.Set("procid", p.Id);
-                  
-
-                    //save store in a file
-                    sman.SaveStore("secrets.bin");
-
-                }
-                //dB.Put("pid", p.Id.ToString());
+           
+ 
                 return p;
 
             }
@@ -152,16 +252,18 @@ namespace models.demoinstrument
         }
         private async Task<MethodResponse> HandleEnableRemoteCommand(MethodRequest methodRequest, object userContext)
         {
-            _ = EnableRDP();
+            secretstore.SaveSecret("relayconfig",methodRequest.DataAsJson);
 
-
+            RelayConfig rc = JsonConvert.DeserializeObject<RelayConfig>(methodRequest.DataAsJson);
+           
+        
             var reportedProperties = new TwinCollection();
-            reportedProperties["RemoteUrl"] = "https://test.com";
+            reportedProperties["RemoteUrl"] = rc.SessionUrl;
 
             await _deviceClient.UpdateReportedPropertiesAsync(reportedProperties);
-            _logger.LogDebug($"Property: Update - {{ \"RemoteUrl\":\"https://test.com\"}} is {StatusCode.Completed}.");
+            _logger.LogDebug($"Property: Update - {{ \"RemoteUrl\":{rc.SessionUrl} is {StatusCode.Completed}.");
 
-            var report = "{}";
+            var report = "{\"RelayConfig\":true}";
 
             byte[] responsePayload = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(report));
             return new MethodResponse(responsePayload, (int)StatusCode.Completed);
@@ -169,51 +271,7 @@ namespace models.demoinstrument
 
         }
 
-      
-
-    
-        
-
-        /// <summary>
-        /// The TargetTemperatureUpdateCallbackAsync.
-        /// </summary>
-        /// <param name="desiredProperties">The desiredProperties<see cref="TwinCollection"/>.</param>
-        /// <param name="userContext">The userContext<see cref="object"/>.</param>
-        /// <returns>The <see cref="Task"/>.</returns>
-        private async Task TargetTemperatureUpdateCallbackAsync(TwinCollection desiredProperties, object userContext)
-        {
-            const string propertyName = "targetTemperature";
-
-            (bool targetTempUpdateReceived, double targetTemperature) = GetPropertyFromTwin<double>(desiredProperties, propertyName);
-            if (targetTempUpdateReceived)
-            {
-                _logger.LogDebug($"Property: Received - {{ \"{propertyName}\": {targetTemperature}°C }}.");
-
-                string jsonPropertyPending = $"{{ \"{propertyName}\": {{ \"value\": {_temperature}, \"ac\": {(int)StatusCode.InProgress}, " +
-                    $"\"av\": {desiredProperties.Version} }} }}";
-                var reportedPropertyPending = new TwinCollection(jsonPropertyPending);
-                await _deviceClient.UpdateReportedPropertiesAsync(reportedPropertyPending);
-                _logger.LogDebug($"Property: Update - {{\"{propertyName}\": {targetTemperature}°C }} is {StatusCode.InProgress}.");
-
-                // Update Temperature in 2 steps
-                double step = (targetTemperature - _temperature) / 2d;
-                for (int i = 1; i <= 2; i++)
-                {
-                    _temperature = Math.Round(_temperature + step, 1);
-                    await Task.Delay(6 * 1000);
-                }
-
-                string jsonProperty = $"{{ \"{propertyName}\": {{ \"value\": {_temperature}, \"ac\": {(int)StatusCode.Completed}, " +
-                    $"\"av\": {desiredProperties.Version}, \"ad\": \"Successfully updated target temperature\" }} }}";
-                var reportedProperty = new TwinCollection(jsonProperty);
-                await _deviceClient.UpdateReportedPropertiesAsync(reportedProperty);
-                _logger.LogDebug($"Property: Update - {{\"{propertyName}\": {_temperature}°C }} is {StatusCode.Completed}.");
-            }
-            else
-            {
-                _logger.LogDebug($"Property: Received an unrecognized property update from service:\n{desiredProperties.ToJson()}");
-            }
-        }
+  
 
         /// <summary>
         /// The GetPropertyFromTwin.

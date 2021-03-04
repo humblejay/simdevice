@@ -6,7 +6,6 @@
     using Microsoft.Azure.Devices.Shared;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
-    using NeoSmart.SecureStore;
     using System;
     using System.Reflection;
     using System.Security.Cryptography;
@@ -16,6 +15,8 @@
     using models.demoinstrument;
     using models.thermostat;
     using System.IO;
+    using System.Diagnostics;
+    
 
     /// <summary>
     /// Defines the <see cref="Program" />.
@@ -35,8 +36,10 @@
         /// <summary>
         /// Defines the modelId.
         /// </summary>
+        private static Parameters parameters;
         private static string modelId;
         public static string sdeviceId;
+        public static secretstore store;
 
         /// <summary>
         /// The Main.
@@ -45,11 +48,11 @@
         /// <returns>The <see cref="Task{int}"/>.</returns>
         internal static async Task<int> Main(string[] args)
         {
-            //Get Configuration
+            //Get Configuration from appsettings.json, environment variables and commandline
             var setConfig = GetConfiguration(args);
 
             // Parse application parameters
-            Parameters parameters = new Parameters();
+            parameters = new Parameters();
 
             parameters.EnrollmentType = EnrollmentType.Group;
             parameters.PrimaryKey = setConfig["DpsGroupPrimaryKey"];
@@ -63,7 +66,8 @@
             if (parameters.EnrollmentType == EnrollmentType.Group)
                 parameters.PrimaryKey = ComputeDerivedSymmetricKey(parameters.PrimaryKey, parameters.Id);
 
-            s_logger = InitializeConsoleDebugLogger();
+            s_logger = InitializeConsoleDebugLogger(parameters.modelId);
+            store = secretstore.GetInstance(parameters);
             sdeviceId = parameters.Id;
 
           
@@ -73,21 +77,7 @@
                 throw new ArgumentException("Required parameters are not set. Please recheck required variables by using \"--help\"");
             }
 
-            if (!File.Exists("secret.bin"))
-            {
-                //secrets.bin file not found, so create it
-                using (var sman = SecretsManager.CreateStore())
-                {
-                    //securely derive key from primary key
-                    sman.LoadKeyFromPassword(parameters.PrimaryKey);
-                    // Export the keyfile for future use to retrive secret
-                    sman.ExportKey("secrets.key");
-
-                    //save store in a file
-                    sman.SaveStore("secrets.bin");
-
-                }
-            }
+         
 
             var runningTime = parameters.ApplicationRunningTime != null
                                 ? TimeSpan.FromSeconds((double)parameters.ApplicationRunningTime)
@@ -96,40 +86,31 @@
             s_logger.LogInformation("Press Control+C to quit the sample.");
             using var cts = new CancellationTokenSource(runningTime);
 
-            try
-            {
-                //Check if connection string  is available in secrets.bin
-                s_logger.LogInformation("Getting saved connection string");
-                iothubConnection = getConn();
+         //Check if connection string  is available in secrets.bin else provision and get connection string
+                s_logger.LogInformation("Getting connection string");
+                iothubConnection = GetConn(false,cts).Result;
                 modelId = parameters.modelId;
-            }
-          
-            catch (Exception ex)
-            {
-
-                //Load secrets.bin file 
-                using (var sman = SecretsManager.LoadStore("secrets.bin"))
-                {
-                    //load key
-                    sman.LoadKeyFromFile("secret.key;");
-
-                    //Provision device and get connection string
-                    s_logger.LogInformation("No saved connection string, adding new");
-                    iothubConnection = await ProvisionDeviceAsync(parameters, cts.Token);
-
-                    //save connection string to secure store
-                    sman.Set("iothubconn", iothubConnection);
-
-                    //save store in a file
-                    sman.SaveStore("secrets.bin");
-
-                }
-
-            }
-
 
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
+                try
+                {
+                    string procid = secretstore.GetSecret("procid");
+             
+                Process p = Process.GetProcessById(Convert.ToInt32(procid));
+                    p.CloseMainWindow();
+                    p.Close();
+                    secretstore.SaveSecret("procid", "");
+                 
+                }
+                catch (Exception Ex)
+                {
+                    //Key was not present
+
+
+                }
+
+
                 eventArgs.Cancel = true;
                 cts.Cancel();
                 s_logger.LogInformation("Sample execution cancellation requested; will exit.");
@@ -137,14 +118,7 @@
 
             try
             {
-                s_logger.LogDebug($"Set up the device client.");
-
-                using DeviceClient deviceClient = SetupDeviceClientAsync(iothubConnection, cts.Token);
-                //var sample = new ThermostatSample(deviceClient, s_logger);
-                //await sample.PerformOperationsAsync(cts.Token);
-
-                var sample = new DemoInstrument(deviceClient, s_logger);
-                await sample.PerformOperationsAsync(cts.Token);
+                var status =await PerformOperations(cts);
             }
             catch (Exception ex)
             {
@@ -152,57 +126,74 @@
 
                 if (ex.Message.ToString() == "CONNECT failed: RefusedNotAuthorized")
                 {
-                    s_logger.LogInformation("CONNECT failed: RefusedNotAuthorized");
-
-                    //Reprovision device and save connection string to secure store
-                    using (var sman = SecretsManager.LoadStore("secrets.bin"))
-                    {
-                        //Load key from file
-                        sman.LoadKeyFromFile("secrets.key");
-
-
-                        //Provision device and get connection string
-                        iothubConnection = await ProvisionDeviceAsync(parameters, cts.Token);
-
-                        //save connection string to secure store
-                        sman.Set("iothubconn", iothubConnection);
-                        s_logger.LogInformation("Getting updated connection string");
-
-                        //save store in a file
-                        sman.SaveStore("secrets.bin");
-
-                    }
-
-                    s_logger.LogDebug($"Set up the device client.");
-
-                    using DeviceClient deviceClient = SetupDeviceClientAsync(iothubConnection, cts.Token);
-                   // var sample = new ThermostatSample(deviceClient, s_logger);
-                   // await sample.PerformOperationsAsync(cts.Token);
-                    var sample = new DemoInstrument(deviceClient, s_logger);
-                    await sample.PerformOperationsAsync(cts.Token);
+                    iothubConnection = GetConn(true, cts).Result;
 
                 }
             }
 
             return 0;
         }
+        //Start Operations
+        public static async Task<int> PerformOperations(CancellationTokenSource cts)
+        {
+            try
+            {
+                s_logger.LogDebug($"Set up the device client.");
+                using DeviceClient deviceClient = SetupDeviceClientAsync(iothubConnection, cts.Token);
+
+                //Check modelId and start operations
+                switch (parameters.modelId)
+                {
+                    case "dtmi:demoapp:DemoInstrument6ql;1":
+                        {
+                            var sample = new DemoInstrument(deviceClient, s_logger);
+                            await sample.PerformOperationsAsync(cts.Token);
+                            break;
+                        }
+                    case "dtmi:com:example:Thermostat;1":
+                        {
+                            var sample = new ThermostatSample(deviceClient, s_logger);
+                            await sample.PerformOperationsAsync(cts.Token);
+                            break;
+                        }
+                }
+              
+            }
+            catch (Exception ex)
+            {
+                //"CONNECT failed: RefusedNotAuthorized"
+                if (ex.Message.ToString() == "CONNECT failed: RefusedNotAuthorized")
+                    return 1;
+                               
+            }
+            return 0;
+        }
+
+      
 
         /// <summary>
         /// The Get IoTHub Connection from Secure Store if saved earlier.
         /// </summary>
         /// <returns>The <see cref="string"/>.</returns>
-        private static string getConn()
+        private static async Task<string> GetConn(Boolean renew, CancellationTokenSource cts)
         {
-            using (var sman = SecretsManager.LoadStore("secrets.bin"))
+            var connstr = secretstore.GetSecret("iothubconn");
+            if(connstr == "" || !renew)
             {
+                //Provision device and get connection string
+                iothubConnection = await ProvisionDeviceAsync(parameters, cts.Token);
 
-                // or use an existing key file:
-                sman.LoadKeyFromFile("secrets.key");
-                var secret = sman.Get("iothubconn");
-
-                return secret;
+                //Save connection string
+                secretstore.SaveSecret("iothubconn", iothubConnection);
+                return iothubConnection;
+            }
+            else
+            {
+                return connstr;
 
             }
+       
+
         }
 
         /// <summary>
@@ -288,7 +279,7 @@
         /// The InitializeConsoleDebugLogger.
         /// </summary>
         /// <returns>The <see cref="ILogger"/>.</returns>
-        private static ILogger InitializeConsoleDebugLogger()
+        private static ILogger InitializeConsoleDebugLogger(string modelId)
         {
             ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
             {
@@ -297,9 +288,29 @@
                 .AddConsole();
 
             });
+            
+           switch(modelId)
+            {
+                case "dtmi:demoapp:DemoInstrument6ql;1":
+                    {
+                       
+                        return loggerFactory.CreateLogger<DemoInstrument>();
+                     
+                    }
+                case "dtmi:com:example:Thermostat;1":
+                    {
+                        return loggerFactory.CreateLogger<ThermostatSample>();
+                       
+                    }
+                default:
+                    {
+                        return loggerFactory.CreateLogger<ThermostatSample>();
+                    }
+               
+            }
 
-           // return loggerFactory.CreateLogger<ThermostatSample>();
-            return loggerFactory.CreateLogger<DemoInstrument>();
+
+
         }
 
         /// <summary>

@@ -2,23 +2,23 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="bin\Debugnetcoreapp2.1\**" />
-    <Compile Remove="bin\Debug\netcoreapp2.1\ref\**" />
-    <EmbeddedResource Remove="bin\Debugnetcoreapp2.1\**" />
-    <EmbeddedResource Remove="bin\Debug\netcoreapp2.1\ref\**" />
-    <None Remove="bin\Debugnetcoreapp2.1\**" />
-    <None Remove="bin\Debug\netcoreapp2.1\ref\**" />
+    <Compile Remove="bin\Debugnetcoreapp3.1\**" />
+    <Compile Remove="bin\Debug\netcoreapp3.1\ref\**" />
+    <EmbeddedResource Remove="bin\Debugnetcoreapp3.1\**" />
+    <EmbeddedResource Remove="bin\Debug\netcoreapp3.1\ref\**" />
+    <None Remove="bin\Debugnetcoreapp3.1\**" />
+    <None Remove="bin\Debug\netcoreapp3.1\ref\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="bin\Debug\netcoreapp2.1\appsettings.json" />
-    <Content Include="bin\Debug\netcoreapp2.1\PortBridgeService.deps.json" />
-    <Content Include="bin\Debug\netcoreapp2.1\PortBridgeService.runtimeconfig.dev.json" />
-    <Content Include="bin\Debug\netcoreapp2.1\PortBridgeService.runtimeconfig.json" />
+    <Content Include="bin\Debug\netcoreapp3.1\appsettings.json" />
+    <Content Include="bin\Debug\netcoreapp3.1\PortBridgeService.deps.json" />
+    <Content Include="bin\Debug\netcoreapp3.1\PortBridgeService.runtimeconfig.dev.json" />
+    <Content Include="bin\Debug\netcoreapp3.1\PortBridgeService.runtimeconfig.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,41 +36,35 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="bin\Debug\netcoreapp2.1\AzureRelayPortBridge.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\AzureRelayPortBridge.pdb" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.AspNetCore.WebUtilities.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Azure.Relay.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Configuration.Abstractions.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Configuration.Binder.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Configuration.CommandLine.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Configuration.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Configuration.FileExtensions.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.DependencyInjection.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.FileProviders.Abstractions.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.FileProviders.Physical.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.FileSystemGlobbing.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Logging.Abstractions.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Logging.Configuration.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Logging.Console.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Logging.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Options.ConfigurationExtensions.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Options.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\Microsoft.Extensions.Primitives.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\PortBridgeService.dll" />
-    <None Include="bin\Debug\netcoreapp2.1\PortBridgeService.exe" />
-    <None Include="bin\Debug\netcoreapp2.1\PortBridgeService.pdb" />
+    <None Include="bin\Debug\netcoreapp3.1\AzureRelayPortBridge.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\AzureRelayPortBridge.pdb" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.AspNetCore.WebUtilities.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Azure.Relay.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Configuration.Abstractions.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Configuration.Binder.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Configuration.CommandLine.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Configuration.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Configuration.FileExtensions.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.DependencyInjection.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.FileProviders.Abstractions.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.FileProviders.Physical.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.FileSystemGlobbing.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Logging.Abstractions.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Logging.Configuration.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Logging.Console.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Logging.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Options.ConfigurationExtensions.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Options.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Microsoft.Extensions.Primitives.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\PortBridgeService.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\PortBridgeService.exe" />
+    <None Include="bin\Debug\netcoreapp3.1\PortBridgeService.pdb" />
   </ItemGroup>
 
 </Project>

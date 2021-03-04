@@ -10,7 +10,7 @@ namespace simdevice
     /// <summary>
     /// Parameters for the application.
     /// </summary>
-    internal class Parameters
+    public class Parameters
     {
         /// <summary>
         /// Gets or sets the IdScope.
@@ -110,5 +110,11 @@ namespace simdevice
                 return true;
             else return false;
         }
+
+
+
+
+
+
     }
 }
