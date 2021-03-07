@@ -4,15 +4,33 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>aa3b737f-b449-4c5a-981f-fbd4bce434b6</UserSecretsId>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
-
   <ItemGroup>
-    <AssetsSourceFiles Include="$(ProjectDir)..\PortBridgeService\bin\Release\netcoreapp3.1\**\*.*" />
-    
+    <Compile Remove="bin\**" />
+    <Compile Remove="Properties\**" />
+    <EmbeddedResource Remove="bin\**" />
+    <EmbeddedResource Remove="Properties\**" />
+    <None Remove="bin\**" />
+    <None Remove="Properties\**" />
   </ItemGroup>
 
-  <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
-    <Copy SourceFiles="@(AssetsSourceFiles)" DestinationFolder="$(OutputPath)relay\" SkipUnchangedFiles="true" />
+  <ItemGroup Condition="'$(Configuration)'=='Release'">
+    <AssetsSourceFiles  Include="$(ProjectDir)..\PortBridgeService\bin\Release\netcoreapp3.1\**\*.*" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)'=='Debug'">
+    <AssetsSourceFiles  Include="$(ProjectDir)..\PortBridgeService\bin\Debug\netcoreapp3.1\**\*.*" />
+
+
+  </ItemGroup>
+
+  <Target Name="CopyCustomContent" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Release'">
+    <Copy SourceFiles="@(AssetsSourceFiles)" DestinationFolder="$(OutputPath)relay\" SkipUnchangedFiles="false" />
+  </Target>
+
+  <Target Name="CopyCustomContent" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Debug'">
+    <Copy SourceFiles="@(AssetsSourceFiles)" DestinationFolder="$(OutputPath)relay\" SkipUnchangedFiles="false" />
   </Target>
 
   <ItemGroup>

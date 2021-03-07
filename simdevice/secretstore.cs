@@ -45,7 +45,7 @@ namespace simdevice
                 using (var sman = SecretsManager.CreateStore())
                 {
                     //securely derive key from primary key
-                    sman.LoadKeyFromPassword(_parameters.PrimaryKey);
+                    sman.LoadKeyFromPassword(_parameters.DpsPrimaryKey);
                     // Export the keyfile for future use to retrive secret
                     sman.ExportKey("secrets.key");
                     //save store in a file

@@ -20,7 +20,7 @@ namespace simdevice
             "IdScope",
             Required = true,
             HelpText = "The Id Scope of the DPS instance")]
-        public string IdScope { get; set; }
+        public string DpsIdScope { get; set; }
 
         /// <summary>
         /// Gets or sets the Id.
@@ -30,7 +30,7 @@ namespace simdevice
             "Id",
             Required = true,
             HelpText = "The registration Id when using individual enrollment, or the desired device Id when using group enrollment.")]
-        public string Id { get; set; }
+        public string deviceId { get; set; }
 
         /// <summary>
         /// Gets or sets the modelId.
@@ -51,7 +51,7 @@ namespace simdevice
             "PrimaryKey",
             Required = true,
             HelpText = "The primary key of the individual or group enrollment.")]
-        public string PrimaryKey { get; set; }
+        public string DpsPrimaryKey { get; set; }
 
         /// <summary>
         /// Gets or sets the EnrollmentType.
@@ -59,7 +59,7 @@ namespace simdevice
         [Option(
             'e',
             "EnrollmentType",
-            Default = EnrollmentType.Individual,
+            Default = EnrollmentType.Group,
             HelpText = "The type of enrollment: Individual or Group")]
         public EnrollmentType EnrollmentType { get; set; }
 
@@ -102,9 +102,9 @@ namespace simdevice
         {
             if (
                  !string.IsNullOrWhiteSpace(GlobalDeviceEndpoint)
-                 && !string.IsNullOrWhiteSpace(PrimaryKey)
-                 && !string.IsNullOrWhiteSpace(Id)
-                 && !string.IsNullOrWhiteSpace(IdScope)
+                 && !string.IsNullOrWhiteSpace(DpsPrimaryKey)
+                 && !string.IsNullOrWhiteSpace(deviceId)
+                 && !string.IsNullOrWhiteSpace(DpsIdScope)
 
                  )
                 return true;

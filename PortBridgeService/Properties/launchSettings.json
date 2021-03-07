@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PortBridgeService": {
+      "commandName": "Project",
+      "commandLineArgs": " \"--HybridConnectionServerHost:ServiceBusNameSpace\" \"rdprelay.servicebus.windows.net\" \"--HybridConnectionServerHost:ServiceBusKeyName\" \"RootManageSharedAccessKey\" \"--HybridConnectionServerHost:ServiceBusKey\" \"3LAbpZVDRqVPCrg+Od2LQX6TTPDgsuVotHoMrCA6pGc=\" \"--HybridConnectionServerHost:ForwardingRules:0:ServiceBusConnectionName\" \"demodevice\" \"--HybridConnectionServerHost:ForwardingRules:0:TargetHostname\" \"surfacebook\" \"--HybridConnectionServerHost:ForwardingRules:0:TargetPorts\" \"3389\" \"--HybridConnectionServerHost:ForwardingRules:0:InstanceCount\" \"1\""
+    }
+  }
+}

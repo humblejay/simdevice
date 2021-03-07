@@ -197,18 +197,19 @@ namespace models.demoinstrument
 
   
 
-        public static Process EnableRDP()
+        private Process EnableRDP()
         {
             try
             {
                 string jrelaconfig = secretstore.GetSecret("relayconfig");
                 string sDirectory = Directory.GetCurrentDirectory();
+                _logger.LogInformation(sDirectory);
                 RelayConfig rc = JsonConvert.DeserializeObject<RelayConfig>(jrelaconfig);
 
-                ProcessStartInfo sinfo = new ProcessStartInfo("relay\\PortBridgeService.exe");
-
+                ProcessStartInfo sinfo = new ProcessStartInfo();
                
-                sinfo.WorkingDirectory = sDirectory;
+                sinfo.WorkingDirectory = sDirectory + "\\relay\\";
+                sinfo.FileName = "PortBridgeService.exe";
 
                 //sinfo.ArgumentList.Add("relay\\PortBridgeService.dll");
                 sinfo.ArgumentList.Add("--HybridConnectionServerHost:ServiceBusNameSpace");
@@ -237,9 +238,9 @@ namespace models.demoinstrument
                 sinfo.CreateNoWindow = false;
                 sinfo.ErrorDialog = true;
 
-                Console.WriteLine("Starting Process for RDP");
+              
+                _logger.LogInformation("Starting Process for RDP");
                 Process p = Process.Start(sinfo);
-           
  
                 return p;
 

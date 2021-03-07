@@ -16,7 +16,6 @@
     using models.thermostat;
     using System.IO;
     using System.Diagnostics;
-    
 
     /// <summary>
     /// Defines the <see cref="Program" />.
@@ -51,33 +50,21 @@
             //Get Configuration from appsettings.json, environment variables and commandline
             var setConfig = GetConfiguration(args);
 
-            // Parse application parameters
             parameters = new Parameters();
-
-            parameters.EnrollmentType = EnrollmentType.Group;
-            parameters.PrimaryKey = setConfig["DpsGroupPrimaryKey"];
-            parameters.IdScope = setConfig["DpsIdScope"];
-            parameters.GlobalDeviceEndpoint = "global.azure-devices-provisioning.net";
-            parameters.Id = setConfig["RegistrationPrefix"];
-            parameters.modelId = setConfig["ModelId"];
-            parameters.TransportType = TransportType.Mqtt;
+            setConfig.Bind(parameters);
 
             //If enrollment type is global, derive device key from group key
             if (parameters.EnrollmentType == EnrollmentType.Group)
-                parameters.PrimaryKey = ComputeDerivedSymmetricKey(parameters.PrimaryKey, parameters.Id);
+                parameters.DpsPrimaryKey = ComputeDerivedSymmetricKey(parameters.DpsPrimaryKey, parameters.deviceId);
 
             s_logger = InitializeConsoleDebugLogger(parameters.modelId);
             store = secretstore.GetInstance(parameters);
-            sdeviceId = parameters.Id;
-
-          
+            sdeviceId = parameters.deviceId;
 
             if (!parameters.Validate(s_logger))
             {
                 throw new ArgumentException("Required parameters are not set. Please recheck required variables by using \"--help\"");
             }
-
-         
 
             var runningTime = parameters.ApplicationRunningTime != null
                                 ? TimeSpan.FromSeconds((double)parameters.ApplicationRunningTime)
@@ -169,8 +156,6 @@
             return 0;
         }
 
-      
-
         /// <summary>
         /// The Get IoTHub Connection from Secure Store if saved earlier.
         /// </summary>
@@ -204,9 +189,9 @@
         /// <returns>The IoTHub Connection String/>.</returns>
         private static async Task<string> ProvisionDeviceAsync(Parameters parameters, CancellationToken cancellationToken)
         {
-            SecurityProvider symmetricKeyProvider = new SecurityProviderSymmetricKey(parameters.Id, parameters.PrimaryKey, null);
+            SecurityProvider symmetricKeyProvider = new SecurityProviderSymmetricKey(parameters.deviceId, parameters.DpsPrimaryKey, null);
             ProvisioningTransportHandler mqttTransportHandler = new ProvisioningTransportHandlerMqtt();
-            ProvisioningDeviceClient pdc = ProvisioningDeviceClient.Create(parameters.GlobalDeviceEndpoint, parameters.IdScope,
+            ProvisioningDeviceClient pdc = ProvisioningDeviceClient.Create(parameters.GlobalDeviceEndpoint, parameters.DpsIdScope,
                 symmetricKeyProvider, mqttTransportHandler);
 
             var pnpPayload = new ProvisioningRegistrationAdditionalData
@@ -214,7 +199,7 @@
                 JsonData = $"{{ \"modelId\": \"{parameters.modelId}\" }}",
             };
             var result = await pdc.RegisterAsync(pnpPayload, cancellationToken);
-            string connStr = $"HostName={result.AssignedHub};DeviceId={result.DeviceId};SharedAccessKey={parameters.PrimaryKey}";
+            string connStr = $"HostName={result.AssignedHub};DeviceId={result.DeviceId};SharedAccessKey={parameters.DpsPrimaryKey}";
             return connStr;
         }
 
