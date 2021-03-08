@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project  Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,32 +7,32 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="bin\**" />
-    <Compile Remove="Properties\**" />
-    <EmbeddedResource Remove="bin\**" />
-    <EmbeddedResource Remove="Properties\**" />
-    <None Remove="bin\**" />
-    <None Remove="Properties\**" />
-  </ItemGroup>
+
 
   <ItemGroup Condition="'$(Configuration)'=='Release'">
     <AssetsSourceFiles  Include="$(ProjectDir)..\PortBridgeService\bin\Release\netcoreapp3.1\**\*.*" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)'=='Debug'">
-    <AssetsSourceFiles  Include="$(ProjectDir)..\PortBridgeService\bin\Debug\netcoreapp3.1\**\*.*" />
-
-
+    <AssetsSourceFiles  Include="$(ProjectDir)..\PortBridgeService\bin\Release\netcoreapp3.1\**\*.*" />
   </ItemGroup>
 
   <Target Name="CopyCustomContent" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Release'">
     <Copy SourceFiles="@(AssetsSourceFiles)" DestinationFolder="$(OutputPath)relay\" SkipUnchangedFiles="false" />
+    <Message Importance="High" Text="$(OutputPath)" />
   </Target>
-
   <Target Name="CopyCustomContent" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Debug'">
     <Copy SourceFiles="@(AssetsSourceFiles)" DestinationFolder="$(OutputPath)relay\" SkipUnchangedFiles="false" />
+    <Message Importance="High" Text="$(OutputPath)" />
   </Target>
 
+  <Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
+    <ItemGroup>
+      <RelayFiles Include="$(ProjectDir)..\PortBridgeService\bin\Release\netcoreapp3.1\**\*.*"/>
+    </ItemGroup>
+    <Copy SourceFiles="@(RelayFiles)" DestinationFolder="$(PublishDir)relay\" SkipUnchangedFiles="false" />
+  </Target>
+  
+  
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.35.0" />
