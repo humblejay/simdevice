@@ -119,23 +119,23 @@ namespace models.demoinstrument
 
         private async Task HandleDesiredProperties(TwinCollection desiredProperties, object userContext)
         {
-            const string propertyName = "EnableRDP";
+            const string propertyName = "RelayConnection";
             Process relayprocess;
-            (bool EnableRDPReceived, bool valueEnableRDP) = GetPropertyFromTwin<bool>(desiredProperties, propertyName);
-            if (EnableRDPReceived)
+            (bool RelayConnectionReceived, bool valueRelayConnection) = GetPropertyFromTwin<bool>(desiredProperties, propertyName);
+            if (RelayConnectionReceived)
             {
 
-                _logger.LogDebug($"Property: Received - {{ \"{propertyName}\": {valueEnableRDP} }}.");
+                _logger.LogDebug($"Property: Received - {{ \"{propertyName}\": {valueRelayConnection} }}.");
 
-                if (valueEnableRDP)
+                if (valueRelayConnection)
                 {
-                    string jsonPropertyPending = $"{{ \"{propertyName}\": {{ \"value\":\" {valueEnableRDP}\", \"ac\": {(int)StatusCode.InProgress}, " +
+                    string jsonPropertyPending = $"{{ \"{propertyName}\": {{ \"value\":\" {valueRelayConnection}\", \"ac\": {(int)StatusCode.InProgress}, " +
                         $"\"av\": {desiredProperties.Version} }} }}";
                     var reportedPropertyPending = new TwinCollection(jsonPropertyPending);
                     await _deviceClient.UpdateReportedPropertiesAsync(reportedPropertyPending);
-                    _logger.LogDebug($"Property: Update - {{\"{propertyName}\": {valueEnableRDP} }} is {StatusCode.InProgress}.");
+                    _logger.LogDebug($"Property: Update - {{\"{propertyName}\": {valueRelayConnection} }} is {StatusCode.InProgress}.");
 
-                     relayprocess = EnableRDP();
+                     relayprocess = RelayConnection();
                     secretstore.SaveSecret("procid", relayprocess.Id.ToString());
 
                 
@@ -144,26 +144,26 @@ namespace models.demoinstrument
                     {
                     
 
-                        string jsonProperty = $"{{ \"{propertyName}\": {{ \"value\": \"{valueEnableRDP}\", \"ac\": {(int)StatusCode.Completed}, " +
+                        string jsonProperty = $"{{ \"{propertyName}\": {{ \"value\": \"{valueRelayConnection}\", \"ac\": {(int)StatusCode.Completed}, " +
                             $"\"av\": {desiredProperties.Version}, \"ad\": \"Successfully enabled RDP\" }} }}";
                         var reportedProperty = new TwinCollection(jsonProperty);
                         //reportedProperty["RemoteUrl"] = "https://test.com";
-                        reportedProperty["EnableRDP"] = true;
+                        reportedProperty["RelayConnection"] = true;
                         await _deviceClient.UpdateReportedPropertiesAsync(reportedProperty);
-                        _logger.LogDebug($"Property: Update - {{\"{propertyName}\": \"{valueEnableRDP}\" }} is {StatusCode.Completed}.");
+                        _logger.LogDebug($"Property: Update - {{\"{propertyName}\": \"{valueRelayConnection}\" }} is {StatusCode.Completed}.");
                     }
                     else
                     {
-                        _logger.LogError($"Property: Update - {{\"{propertyName}\": \"{valueEnableRDP}\" }} is could not start relay.");
+                        _logger.LogError($"Property: Update - {{\"{propertyName}\": \"{valueRelayConnection}\" }} is could not start relay.");
                     }
                 }
                 else
                 {
-                    string jsonProperty = $"{{ \"{propertyName}\": {{ \"value\":\" {valueEnableRDP}\", \"ac\": {(int)StatusCode.Completed}, " +
+                    string jsonProperty = $"{{ \"{propertyName}\": {{ \"value\":\" {valueRelayConnection}\", \"ac\": {(int)StatusCode.Completed}, " +
                       $"\"av\": {desiredProperties.Version}, \"ad\": \"Successfully disabled RDP\" }} }}";
                     var reportedProperty = new TwinCollection(jsonProperty);
                     //reportedProperty["RemoteUrl"] = "https://test.com";
-                    reportedProperty["EnableRDP"] = false;
+                    reportedProperty["RelayConnection"] = false;
 
                     try
                     {
@@ -184,7 +184,7 @@ namespace models.demoinstrument
 
 
                     await _deviceClient.UpdateReportedPropertiesAsync(reportedProperty);
-                    _logger.LogDebug($"Property: Update - {{\"{propertyName}\":\" {valueEnableRDP}\" }} is {StatusCode.Completed}.");
+                    _logger.LogDebug($"Property: Update - {{\"{propertyName}\":\" {valueRelayConnection}\" }} is {StatusCode.Completed}.");
 
                 }
 
@@ -197,7 +197,7 @@ namespace models.demoinstrument
 
   
 
-        private Process EnableRDP()
+        private Process RelayConnection()
         {
             try
             {

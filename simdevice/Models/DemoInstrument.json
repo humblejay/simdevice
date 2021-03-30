@@ -130,9 +130,9 @@
           "en": "Enable or Disable RDP"
         },
         "displayName": {
-          "en": "EnableRDP"
+          "en": "RelayConnection"
         },
-        "name": "EnableRDP",
+        "name": "RelayConnection",
         "schema": "boolean",
         "writable": true
       }
