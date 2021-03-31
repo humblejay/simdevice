@@ -32,6 +32,14 @@ namespace simdevice
             HelpText = "The registration Id when using individual enrollment, or the desired device Id when using group enrollment.")]
         public string deviceId { get; set; }
 
+        //Sets device count to simulate
+        [Option(
+       'c',
+       "Cn",
+       Required = false,
+       HelpText = "The registration Id when using individual enrollment, or the desired device Id when using group enrollment.")]
+        public int deviceCount { get; set; }
+
         /// <summary>
         /// Gets or sets the modelId.
         /// </summary>

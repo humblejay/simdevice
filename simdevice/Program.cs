@@ -12,7 +12,6 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using models.demoinstrument;
     using models.thermostat;
     using System.IO;
     using System.Diagnostics;
@@ -69,26 +68,24 @@
             var runningTime = parameters.ApplicationRunningTime != null
                                 ? TimeSpan.FromSeconds((double)parameters.ApplicationRunningTime)
                                 : Timeout.InfiniteTimeSpan;
-
             s_logger.LogInformation("Press Control+C to quit the sample.");
             using var cts = new CancellationTokenSource(runningTime);
 
-         //Check if connection string  is available in secrets.bin else provision and get connection string
-                s_logger.LogInformation("Getting connection string");
-                iothubConnection = GetConn(false,cts).Result;
-                modelId = parameters.modelId;
+
+            RunDevice(cts);
+        
 
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
                 try
                 {
                     string procid = secretstore.GetSecret("procid");
-             
-                Process p = Process.GetProcessById(Convert.ToInt32(procid));
+
+                    Process p = Process.GetProcessById(Convert.ToInt32(procid));
                     p.CloseMainWindow();
                     p.Close();
                     secretstore.SaveSecret("procid", "");
-                 
+
                 }
                 catch (Exception Ex)
                 {
@@ -102,10 +99,18 @@
                 cts.Cancel();
                 s_logger.LogInformation("Sample execution cancellation requested; will exit.");
             };
+            return 0;
+        }
+        public static void RunDevice(CancellationTokenSource cts)
+        {
+            //Check if connection string  is available in secrets.bin else provision and get connection string
+            s_logger.LogInformation("Getting connection string");
+            iothubConnection = GetConn(false, cts).Result;
+            modelId = parameters.modelId;
 
             try
             {
-                var status =await PerformOperations(cts);
+                var status = PerformOperations(cts);
             }
             catch (Exception ex)
             {
@@ -118,7 +123,7 @@
                 }
             }
 
-            return 0;
+
         }
         //Start Operations
         public static async Task<int> PerformOperations(CancellationTokenSource cts)
@@ -131,12 +136,7 @@
                 //Check modelId and start operations
                 switch (parameters.modelId)
                 {
-                    case "dtmi:demoapp:DemoInstrument6ql;1":
-                        {
-                            var sample = new DemoInstrument(deviceClient, s_logger);
-                            await sample.PerformOperationsAsync(cts.Token);
-                            break;
-                        }
+              
                     case "dtmi:com:example:Thermostat;1":
                         {
                             var sample = new ThermostatSample(deviceClient, s_logger);
@@ -276,12 +276,7 @@
             
            switch(modelId)
             {
-                case "dtmi:demoapp:DemoInstrument6ql;1":
-                    {
-                       
-                        return loggerFactory.CreateLogger<DemoInstrument>();
-                     
-                    }
+               
                 case "dtmi:com:example:Thermostat;1":
                     {
                         return loggerFactory.CreateLogger<ThermostatSample>();

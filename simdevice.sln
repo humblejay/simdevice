@@ -4,14 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "simdevice", "simdevice\simdevice.csproj", "{A151C75D-E010-4C11-B420-B71693E3022C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{4C76043B-3D86-49DB-BB43-B0CD4922DBCB} = {4C76043B-3D86-49DB-BB43-B0CD4922DBCB}
-		{F66B82B8-B4F4-4AC7-A569-DA5C98EC829D} = {F66B82B8-B4F4-4AC7-A569-DA5C98EC829D}
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PortBridgeService", "PortBridgeService\PortBridgeService.csproj", "{4C76043B-3D86-49DB-BB43-B0CD4922DBCB}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AzureRelayPortBridge", "AzureRelayPortBridge\AzureRelayPortBridge.csproj", "{F66B82B8-B4F4-4AC7-A569-DA5C98EC829D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2FF2FE1A-706D-47DF-88C7-BD44BDE05785}"
 	ProjectSection(SolutionItems) = preProject
@@ -28,12 +20,6 @@ Global
 		{A151C75D-E010-4C11-B420-B71693E3022C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A151C75D-E010-4C11-B420-B71693E3022C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A151C75D-E010-4C11-B420-B71693E3022C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4C76043B-3D86-49DB-BB43-B0CD4922DBCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4C76043B-3D86-49DB-BB43-B0CD4922DBCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4C76043B-3D86-49DB-BB43-B0CD4922DBCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4C76043B-3D86-49DB-BB43-B0CD4922DBCB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F66B82B8-B4F4-4AC7-A569-DA5C98EC829D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F66B82B8-B4F4-4AC7-A569-DA5C98EC829D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
