@@ -54,11 +54,11 @@
 
             //If enrollment type is global, derive device key from group key
             if (parameters.EnrollmentType == EnrollmentType.Group)
-                parameters.DpsPrimaryKey = ComputeDerivedSymmetricKey(parameters.DpsPrimaryKey, parameters.deviceId);
+                parameters.DpsPrimaryKey = ComputeDerivedSymmetricKey(parameters.DpsPrimaryKey, parameters.deviceId+"_"+parameters.deviceSuffix);
 
             s_logger = InitializeConsoleDebugLogger(parameters.modelId);
             store = secretstore.GetInstance(parameters);
-            sdeviceId = parameters.deviceId;
+            sdeviceId = parameters.deviceId+"_"+parameters.deviceSuffix;
 
             if (!parameters.Validate(s_logger))
             {
@@ -72,7 +72,7 @@
             using var cts = new CancellationTokenSource(runningTime);
 
 
-            RunDevice(cts);
+            await RunDevice(cts);
         
 
             Console.CancelKeyPress += (sender, eventArgs) =>
@@ -101,7 +101,7 @@
             };
             return 0;
         }
-        public static void RunDevice(CancellationTokenSource cts)
+        public static async Task RunDevice(CancellationTokenSource cts)
         {
             //Check if connection string  is available in secrets.bin else provision and get connection string
             s_logger.LogInformation("Getting connection string");
@@ -110,7 +110,7 @@
 
             try
             {
-                var status = PerformOperations(cts);
+                var status = await PerformOperations(cts);
             }
             catch (Exception ex)
             {
@@ -162,14 +162,14 @@
         /// <returns>The <see cref="string"/>.</returns>
         private static async Task<string> GetConn(Boolean renew, CancellationTokenSource cts)
         {
-            var connstr = secretstore.GetSecret("iothubconn");
+            var connstr = secretstore.GetSecret(parameters.deviceId+"_"+ parameters.deviceSuffix);
             if(connstr == "" || !renew)
             {
                 //Provision device and get connection string
                 iothubConnection = await ProvisionDeviceAsync(parameters, cts.Token);
 
                 //Save connection string
-                secretstore.SaveSecret("iothubconn", iothubConnection);
+                secretstore.SaveSecret(parameters.deviceId+ "_" + parameters.deviceSuffix, iothubConnection);
                 return iothubConnection;
             }
             else
@@ -189,7 +189,7 @@
         /// <returns>The IoTHub Connection String/>.</returns>
         private static async Task<string> ProvisionDeviceAsync(Parameters parameters, CancellationToken cancellationToken)
         {
-            SecurityProvider symmetricKeyProvider = new SecurityProviderSymmetricKey(parameters.deviceId, parameters.DpsPrimaryKey, null);
+            SecurityProvider symmetricKeyProvider = new SecurityProviderSymmetricKey(parameters.deviceId+"_"+parameters.deviceSuffix, parameters.DpsPrimaryKey, null);
             ProvisioningTransportHandler mqttTransportHandler = new ProvisioningTransportHandlerMqtt();
             ProvisioningDeviceClient pdc = ProvisioningDeviceClient.Create(parameters.GlobalDeviceEndpoint, parameters.DpsIdScope,
                 symmetricKeyProvider, mqttTransportHandler);

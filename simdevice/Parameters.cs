@@ -34,17 +34,24 @@ namespace simdevice
 
         //Sets device count to simulate
         [Option(
-       'c',
-       "Cn",
+       's',
+       "ds",
        Required = false,
        HelpText = "The registration Id when using individual enrollment, or the desired device Id when using group enrollment.")]
-        public int deviceCount { get; set; }
+        public string deviceSuffix { get; set; }
+
+           //Sets GatewayHostName to connect via IoT Edge
+        [Option(
+       'g',
+       "gw",
+       Required = false,
+       HelpText = "The registration Id when using individual enrollment, or the desired device Id when using group enrollment.")]
+        public string GatewayHostName { get; set; }
 
         /// <summary>
         /// Gets or sets the modelId.
         /// </summary>
         [Option(
-            'm',
             "modelId",
             Required = false,
             HelpText = "DTDL modelId of this device"
