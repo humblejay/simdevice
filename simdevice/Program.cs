@@ -106,6 +106,10 @@
             //Check if connection string  is available in secrets.bin else provision and get connection string
             s_logger.LogInformation("Getting connection string");
             iothubConnection = GetConn(false, cts).Result;
+           if(parameters.GatewayHostName != "")
+            {
+                iothubConnection = iothubConnection + ";GatewayHostName=" + parameters.GatewayHostName;
+            }
             modelId = parameters.modelId;
 
             try
