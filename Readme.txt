@@ -13,12 +13,13 @@ Add RegistrationPrefix & DTDL modelId for the device in appsettings.json file as
 
 For local development & testing
 Add this in secrets.json file 
-(right click project in Visual Studio > Manage User Secrets) OR
-run "dotnet user-secrets" and use options to list, set, remove secrets  OR
-use extension ".NET Core User Secrets"
+  Right click project in Visual Studio > Manage User Secrets) OR
+  Run "dotnet user-secrets" and use options to list, set, remove secrets  OR
+  Use extension ".NET Core User Secrets" OR
+  Copy below settings into appsettings.json
 ----------------------------------------
 {
-  "DpsIdScope": "0ne0000476D",
+  "DpsIdScope": "<ID Scope>",
   "DPSPrimaryKey": "<Primary key"
 
  }
